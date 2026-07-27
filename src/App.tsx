@@ -73,46 +73,50 @@ export default function App() {
     setLoading(true)
     setErroMsg(null)
 
-    setTimeout(() => {
-      const encontrado = MOCK_ENDERECOS[alvo]
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${alvo}/json/`)
+      const data = await response.json()
 
-      if (!encontrado) {
-        const novoGen: Endereco = {
-          cep: formatarCepMask(alvo),
-          logradouro: 'Rua Exemplo',
-          complemento: '',
-          bairro: 'Centro',
-          localidade: 'São Paulo',
-          uf: 'SP',
-          ibge: '3550308',
-          gia: '1004',
-          ddd: '11',
-          siafi: '7107'
-        }
-        setEnderecoAtual(novoGen)
-        const novoItem: HistoricoItem = {
-          id: Date.now().toString(),
-          cep: formatarCepMask(alvo),
-          cidade: novoGen.localidade,
-          uf: novoGen.uf,
-          logradouro: novoGen.logradouro,
-          data: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        }
-        setHistorico(prev => [novoItem, ...prev.filter(i => i.cep.replace(/\D/g, '') !== alvo)].slice(0, 6))
-      } else {
-        setEnderecoAtual(encontrado)
-        const novoItem: HistoricoItem = {
-          id: Date.now().toString(),
-          cep: formatarCepMask(alvo),
-          cidade: encontrado.localidade,
-          uf: encontrado.uf,
-          logradouro: encontrado.logradouro,
-          data: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        }
-        setHistorico(prev => [novoItem, ...prev.filter(i => i.cep.replace(/\D/g, '') !== alvo)].slice(0, 6))
+      if (data.erro) {
+        setErroMsg('CEP não encontrado na base de dados nacional.')
+        setEnderecoAtual(null)
+        setLoading(false)
+        return
       }
+
+      const enderecoEncontrado: Endereco = {
+        cep: data.cep,
+        logradouro: data.logradouro || 'Não informado',
+        complemento: data.complemento || '',
+        bairro: data.bairro || 'Não informado',
+        localidade: data.localidade,
+        uf: data.uf,
+        ibge: data.ibge || '',
+        gia: data.gia || '',
+        ddd: data.ddd || '',
+        siafi: data.siafi || ''
+      }
+
+      setEnderecoAtual(enderecoEncontrado)
+      const novoItem: HistoricoItem = {
+        id: Date.now().toString(),
+        cep: data.cep,
+        cidade: enderecoEncontrado.localidade,
+        uf: enderecoEncontrado.uf,
+        logradouro: enderecoEncontrado.logradouro,
+        data: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      }
+      setHistorico(prev => [novoItem, ...prev.filter(i => i.cep.replace(/\D/g, '') !== alvo)].slice(0, 6))
+    } catch (err) {
+      const encontrado = MOCK_ENDERECOS[alvo]
+      if (encontrado) {
+        setEnderecoAtual(encontrado)
+      } else {
+        setErroMsg('Erro ao consultar o CEP. Verifique sua conexão.')
+      }
+    } finally {
       setLoading(false)
-    }, 400)
+    }
   }
 
   const buscarClima = async (nomeCidade?: string) => {
