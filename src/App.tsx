@@ -493,7 +493,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-500">
+      <footer className="bg-black border-t border-slate-800 py-6 px-4 text-center text-xs text-slate-400">
         <p>© {new Date().getFullYear()} BuscaCEP & Clima — Dados otimizados para consulta rápida.</p>
       </footer>
     </div>
